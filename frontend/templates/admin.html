@@ -1,0 +1,1926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration - MSSQL CDC Synchronizer</title>
+    <link href="/static/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/bootstrap-icons/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/workflow-designer.css">
+    <link rel="stylesheet" href="/static/mapping-wizard.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/legacy/">
+                <i class="bi bi-arrow-left-right"></i> MSSQL CDC Synchronizer
+            </a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav">
+                    <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/legacy/admin">Administration</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/legacy/operations">Operations</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/legacy/monitoring">Monitoring</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <h2><i class="bi bi-gear-fill"></i> Administration</h2>
+        
+        <ul class="nav nav-tabs mt-3" id="adminTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="connections-tab" data-bs-toggle="tab" data-bs-target="#connections" type="button">
+                    <i class="bi bi-plug"></i> Connections
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="cdc-tab" data-bs-toggle="tab" data-bs-target="#cdc" type="button">
+                    <i class="bi bi-database"></i> CDC Management
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="ingestion-tab" data-bs-toggle="tab" data-bs-target="#ingestion" type="button">
+                    <i class="bi bi-funnel"></i> Data Ingestion
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="mappings-tab" data-bs-toggle="tab" data-bs-target="#mappings" type="button">
+                    <i class="bi bi-arrow-left-right"></i> Mappings
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="worksets-tab" data-bs-toggle="tab" data-bs-target="#worksets" type="button">
+                    <i class="bi bi-collection"></i> Working Sets
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="designer-tab" data-bs-toggle="tab" data-bs-target="#designer" type="button">
+                    <i class="bi bi-diagram-3"></i> Visual Designer
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content mt-3" id="adminTabContent">
+            <!-- Connections Library Tab -->
+            <div class="tab-pane fade show active" id="connections" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4><i class="bi bi-plug"></i> Connection Library</h4>
+                    <button class="btn btn-primary" onclick="showConnectionModal()">
+                        <i class="bi bi-plus-circle"></i> New Connection
+                    </button>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> <strong>Connection Library:</strong> Create and manage reusable database connections. These connections can be referenced in Working Sets and Mappings.
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="connectionsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Server</th>
+                                        <th>Database</th>
+                                        <th>Auth Type</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="connectionsTableBody">
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">
+                                            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                                            Loading connections...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CDC Management Tab -->
+            <div class="tab-pane fade" id="cdc" role="tabpanel">
+                <!-- Connection Selector -->
+                <div class="card mb-3 border-primary">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0"><i class="bi bi-plug"></i> Select Connection for CDC Operations</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row align-items-end">
+                            <div class="col-md-8">
+                                <label class="form-label">Connection</label>
+                                <select class="form-select" id="cdcConnectionSelector" aria-label="Cdc Connection Selector">
+                                    <option value="">-- Select a connection --</option>
+                                </select>
+                                <small class="text-muted">Choose which database to manage CDC settings for</small>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="button" class="btn btn-outline-secondary" onclick="loadConnectionsForCDC()">
+                                    <i class="bi bi-arrow-clockwise"></i> Refresh Connections
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4>Database CDC Status</h4>
+                        <div class="card">
+                            <div class="card-body">
+                                <button class="btn btn-primary" onclick="checkCDCStatus()">
+                                    <i class="bi bi-arrow-clockwise"></i> Check CDC Status
+                                </button>
+                                <button class="btn btn-success ms-2" onclick="enableDatabaseCDC()">
+                                    <i class="bi bi-toggle-on"></i> Enable CDC on Database
+                                </button>
+                                <div id="cdcStatus" class="mt-3"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h4>Table CDC Control</h4>
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Schema Name</label>
+                                    <input type="text" class="form-control" id="cdcSchema" placeholder="dbo" aria-label="dbo">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Table Name</label>
+                                    <input type="text" class="form-control" id="cdcTable" aria-label="Cdc Table">
+                                </div>
+                                <button class="btn btn-success" onclick="enableTableCDC()">
+                                    <i class="bi bi-toggle-on"></i> Enable CDC on Table
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h4>CDC-Enabled Tables</h4>
+                        <div class="card">
+                            <div class="card-body">
+                                <div id="cdcTables">
+                                    <p class="text-muted">Click "Check CDC Status" to see CDC-enabled tables</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Ingestion Tab -->
+            <div class="tab-pane fade" id="ingestion" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4><i class="bi bi-funnel"></i> Data Ingestion Quality Check</h4>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="loadIngestionPatterns()">
+                        <i class="bi bi-arrow-clockwise"></i> Reload Patterns
+                    </button>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> <strong>Data Ingestion:</strong> Compare data from multiple sources to detect mismatches and validate data quality before creating mappings. The system can detect common patterns like swapped columns, encoding issues, and more.
+                </div>
+
+                <!-- Source Configuration -->
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0"><i class="bi bi-database"></i> Configure Data Sources</h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="ingestionSourcesList">
+                            <!-- Sources will be added here dynamically -->
+                        </div>
+                        <button class="btn btn-sm btn-primary" onclick="addIngestionSource()">
+                            <i class="bi bi-plus-circle"></i> Add Source
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Column Mapping Configuration -->
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0"><i class="bi bi-arrow-left-right"></i> Column Mappings</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Join Keys (comma-separated)</label>
+                            <input type="text" class="form-control" id="ingestionJoinKeys" placeholder="e.g., id, customer_id" aria-label="e.g., id, customer_id">
+                            <small class="text-muted">Columns used to match records across sources</small>
+                        </div>
+                        <div id="ingestionColumnMappings">
+                            <!-- Column mappings will be added here -->
+                        </div>
+                        <button class="btn btn-sm btn-secondary" onclick="addIngestionColumnMapping()">
+                            <i class="bi bi-plus-circle"></i> Add Column Mapping
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pattern Selection -->
+                <div class="card mb-3">
+                    <div class="card-header bg-warning">
+                        <h6 class="mb-0"><i class="bi bi-gear"></i> Pattern Detection</h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="ingestionPatternsList">
+                            <p class="text-muted">Loading patterns...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analysis Controls -->
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">Max Records to Analyze</label>
+                                <input type="number" class="form-control" id="ingestionMaxRecords" value="10000" min="1" max="100000" aria-label="Ingestion Max Records">
+                            </div>
+                            <div class="col-md-6 d-flex align-items-end">
+                                <button class="btn btn-success w-100" onclick="runIngestionAnalysis()">
+                                    <i class="bi bi-play-circle"></i> Run Analysis
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results -->
+                <div class="card" id="ingestionResultsCard" style="display: none;">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0"><i class="bi bi-bar-chart"></i> Analysis Results</h6>
+                    </div>
+                    <div class="card-body">
+                        <!-- Summary Statistics -->
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h3 class="text-primary" id="ingestionTotalRecords">0</h3>
+                                        <small class="text-muted">Total Records</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h3 class="text-success" id="ingestionMatchedRecords">0</h3>
+                                        <small class="text-muted">Matched</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h3 class="text-danger" id="ingestionUnmatchedRecords">0</h3>
+                                        <small class="text-muted">Unmatched</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card text-center">
+                                    <div class="card-body">
+                                        <h3 class="text-info" id="ingestionMatchPercentage">0%</h3>
+                                        <small class="text-muted">Match Rate</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mismatches Table -->
+                        <div id="ingestionMismatchesContainer">
+                            <h6>Mismatched Records</h6>
+                            <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                                <table class="table table-sm table-hover">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th>Row ID</th>
+                                            <th>Column</th>
+                                            <th>Values</th>
+                                            <th>Detected Patterns</th>
+                                            <th>Suggested Fix</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ingestionMismatchesTable">
+                                        <!-- Mismatches will be populated here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Export Options -->
+                        <div class="mt-3">
+                            <button class="btn btn-outline-primary btn-sm" onclick="exportIngestionResults('csv')">
+                                <i class="bi bi-file-earmark-spreadsheet"></i> Export to CSV
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="exportIngestionResults('json')">
+                                <i class="bi bi-filetype-json"></i> Export to JSON
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mappings Tab (Unified) -->
+            <div class="tab-pane fade" id="mappings" role="tabpanel">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <button class="btn btn-primary" onclick="showMappingWizard()">
+                                    <i class="bi bi-plus-circle"></i> Create New Mapping
+                                </button>
+                                <button class="btn btn-success ms-2" onclick="showMultiSourceBuilder()">
+                                    <i class="bi bi-diagram-3"></i> Multi-Source (Form)
+                                </button>
+                                <button class="btn btn-info ms-2" onclick="showVisualMergeBuilder()">
+                                    <i class="bi bi-bounding-box"></i> Visual Builder
+                                </button>
+                                <button class="btn btn-secondary ms-2" onclick="loadMappings()">
+                                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                                </button>
+                            </div>
+                            <div>
+                                <label class="form-label me-2">Filter:</label>
+                                <select class="form-select d-inline-block" id="mappingTypeFilter" style="width: auto;" onchange="loadMappings()" aria-label="Mapping Type Filter">
+                                    <option value="">All Types</option>
+                                    <option value="table">Table-based</option>
+                                    <option value="sql">SQL-based</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div id="mappingsList">
+                            <p class="text-muted">No mappings configured. Create one to get started.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Multi-Source Sync Status -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div id="multiSourceStatusContainer">
+                            <!-- Status will be rendered here by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Working Sets Tab -->
+            <div class="tab-pane fade" id="worksets" role="tabpanel">
+                <div class="row">
+                    <div class="col-12">
+                        <button class="btn btn-primary" onclick="showCreateWorksetModal()">
+                            <i class="bi bi-plus-circle"></i> Create Working Set
+                        </button>
+                        <button class="btn btn-secondary ms-2" onclick="loadWorksets()">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div id="worksetsList">
+                            <p class="text-muted">No working sets configured.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual Designer Tab -->
+            <div class="tab-pane fade" id="designer" role="tabpanel">
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="btn-toolbar" role="toolbar">
+                            <div class="btn-group me-2" role="group">
+                                <button class="btn btn-success" onclick="createNewWorkflow()">
+                                    <i class="bi bi-file-earmark-plus"></i> New Workflow
+                                </button>
+                                <button class="btn btn-primary" onclick="saveWorkflow()">
+                                    <i class="bi bi-save"></i> Save
+                                </button>
+                                <button class="btn btn-secondary" onclick="loadWorkflowList()">
+                                    <i class="bi bi-folder-open"></i> Load
+                                </button>
+                            </div>
+                            <div class="btn-group me-2" role="group">
+                                <button class="btn btn-outline-primary" onclick="validateWorkflow()">
+                                    <i class="bi bi-check-circle"></i> Validate
+                                </button>
+                                <button class="btn btn-outline-success" onclick="compileWorkflow()">
+                                    <i class="bi bi-gear"></i> Compile to Mapping
+                                </button>
+                            </div>
+                            <div class="btn-group me-2" role="group">
+                                <button class="btn btn-outline-secondary" onclick="zoomIn()">
+                                    <i class="bi bi-zoom-in"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="zoomOut()">
+                                    <i class="bi bi-zoom-out"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="fitToScreen()">
+                                    <i class="bi bi-arrows-angle-contract"></i> Fit
+                                </button>
+                            </div>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-outline-danger" onclick="clearWorkflow()">
+                                    <i class="bi bi-trash"></i> Clear
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <!-- Node Palette (Left Sidebar) -->
+                    <div class="col-md-2">
+                        <div id="node-palette" class="border rounded p-2" style="height: 75vh; overflow-y: auto;">
+                            <h6 class="text-center mb-3">Toolbox</h6>
+                            
+                            <!-- Start/Stop Category -->
+                            <div class="mb-3">
+                                <h6 class="text-muted small">Control Flow</h6>
+                                <div class="node-palette-item" data-node-type="start" draggable="true">
+                                    <i class="bi bi-play-circle text-success"></i> Start
+                                </div>
+                                <div class="node-palette-item" data-node-type="stop" draggable="true">
+                                    <i class="bi bi-stop-circle text-danger"></i> Stop
+                                </div>
+                            </div>
+                            
+                            <!-- Sources Category -->
+                            <div class="mb-3">
+                                <h6 class="text-muted small">Sources</h6>
+                                <div class="node-palette-item" data-node-type="source_database" draggable="true">
+                                    <i class="bi bi-server text-primary"></i> Database
+                                </div>
+                                <div class="node-palette-item" data-node-type="source_table" draggable="true">
+                                    <i class="bi bi-table text-primary"></i> Table
+                                </div>
+                                <div class="node-palette-item" data-node-type="source_columns" draggable="true">
+                                    <i class="bi bi-list-columns text-primary"></i> Columns
+                                </div>
+                            </div>
+                            
+                            <!-- Transformations Category -->
+                            <div class="mb-3">
+                                <h6 class="text-muted small">Transformations</h6>
+                                <div class="node-palette-item" data-node-type="transform_json" draggable="true">
+                                    <i class="bi bi-braces text-warning"></i> JSON
+                                </div>
+                                <div class="node-palette-item" data-node-type="transform_concat" draggable="true">
+                                    <i class="bi bi-link-45deg text-warning"></i> Concatenate
+                                </div>
+                                <div class="node-palette-item" data-node-type="transform_sql" draggable="true">
+                                    <i class="bi bi-code-square text-warning"></i> Custom SQL
+                                </div>
+                                <div class="node-palette-item" data-node-type="transform_duckdb" draggable="true">
+                                    <i class="bi bi-database-gear text-warning"></i> DuckDB
+                                </div>
+                                <div class="node-palette-item" data-node-type="transform_filter" draggable="true">
+                                    <i class="bi bi-funnel text-warning"></i> Filter
+                                </div>
+                                <div class="node-palette-item" data-node-type="transform_dedupe" draggable="true">
+                                    <i class="bi bi-card-list text-warning"></i> Deduplicate
+                                </div>
+                            </div>
+                            
+                            <!-- Destinations Category -->
+                            <div class="mb-3">
+                                <h6 class="text-muted small">Destinations</h6>
+                                <div class="node-palette-item" data-node-type="dest_database" draggable="true">
+                                    <i class="bi bi-server text-info"></i> Database
+                                </div>
+                                <div class="node-palette-item" data-node-type="dest_table" draggable="true">
+                                    <i class="bi bi-table text-info"></i> Table
+                                </div>
+                                <div class="node-palette-item" data-node-type="dest_mapper" draggable="true">
+                                    <i class="bi bi-arrow-left-right text-info"></i> Column Mapper
+                                </div>
+                            </div>
+                            
+                            <!-- Operators Category -->
+                            <div class="mb-3">
+                                <h6 class="text-muted small">Operators</h6>
+                                <div class="node-palette-item" data-node-type="op_logger" draggable="true">
+                                    <i class="bi bi-journal-text text-secondary"></i> Logger
+                                </div>
+                                <div class="node-palette-item" data-node-type="op_notifier" draggable="true">
+                                    <i class="bi bi-bell text-secondary"></i> Notifier
+                                </div>
+                                <div class="node-palette-item" data-node-type="op_condition" draggable="true">
+                                    <i class="bi bi-question-circle text-secondary"></i> Condition
+                                </div>
+                                <div class="node-palette-item" data-node-type="op_fork" draggable="true">
+                                    <i class="bi bi-diagram-3 text-secondary"></i> Fork
+                                </div>
+                                <div class="node-palette-item" data-node-type="op_join" draggable="true">
+                                    <i class="bi bi-diagram-2 text-secondary"></i> Join
+                                </div>
+                            </div>
+                            
+                            <!-- Events Category -->
+                            <div class="mb-3">
+                                <h6 class="text-muted small">Events</h6>
+                                <div class="node-palette-item" data-node-type="event_error" draggable="true">
+                                    <i class="bi bi-exclamation-triangle text-danger"></i> On Error
+                                </div>
+                                <div class="node-palette-item" data-node-type="event_success" draggable="true">
+                                    <i class="bi bi-check-circle text-success"></i> On Success
+                                </div>
+                                <div class="node-palette-item" data-node-type="event_change" draggable="true">
+                                    <i class="bi bi-arrow-repeat text-info"></i> On Change
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Workflow Canvas (Center) -->
+                    <div class="col-md-8">
+                        <div id="workflow-canvas-container" class="border rounded position-relative" style="height: 75vh; overflow: hidden; background-color: #f8f9fa;">
+                            <div id="workflow-canvas" style="width: 100%; height: 100%; position: relative;">
+                                <!-- Nodes will be added here dynamically -->
+                                <div id="workflow-info" class="text-center text-muted" style="margin-top: 30vh;">
+                                    <i class="bi bi-diagram-3 fs-1"></i>
+                                    <p class="mt-3">Drag nodes from the toolbox to start building your workflow</p>
+                                    <small>Connect nodes by dragging from output ports (right side) to input ports (left side)</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Properties Panel (Right Sidebar) -->
+                    <div class="col-md-2">
+                        <div id="node-properties" class="border rounded p-3" style="height: 75vh; overflow-y: auto;">
+                            <h6 class="text-center mb-3">Properties</h6>
+                            <div id="properties-content" class="text-muted text-center">
+                                <i class="bi bi-gear fs-3"></i>
+                                <p class="small mt-3">Select a node to edit its properties</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Mapping Modal -->
+    <div class="modal fade" id="createMappingModal" tabindex="-1" aria-labelledby="createMappingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createMappingModalLabel">
+                        <i class="bi bi-arrow-left-right"></i> Create Table Mapping
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createMappingForm">
+                        <!-- Step 1: Table Selection -->
+                        <div class="step-section" id="step1">
+                            <h6 class="text-primary mb-3"><i class="bi bi-1-circle"></i> Table Selection</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Source</h6>
+                                    <div class="mb-3">
+                                        <label class="form-label">Connection</label>
+                                        <input type="text" class="form-control" id="mapSourceConnection" value="Source Database" readonly aria-label="Map Source Connection">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Database</label>
+                                        <div class="input-group">
+                                            <select class="form-select" id="mapSourceDatabase" required aria-label="Map Source Database">
+                                                <option value="">Select database...</option>
+                                            </select>
+                                            <button type="button" class="btn btn-outline-secondary" onclick="loadSourceDatabases()" title="Load databases">
+                                                <i class="bi bi-arrow-clockwise"></i>
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">Database from connection config</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Schema</label>
+                                        <select class="form-select" id="mapSourceSchema" required aria-label="Map Source Schema">
+                                            <option value="">Select schema...</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Table</label>
+                                        <select class="form-select" id="mapSourceTable" required aria-label="Map Source Table">
+                                            <option value="">Select table...</option>
+                                        </select>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-primary" onclick="loadSourceTables()">
+                                        <i class="bi bi-arrow-clockwise"></i> Load Tables
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-info" onclick="loadSourceColumns()">
+                                        <i class="bi bi-list-ul"></i> Load Columns
+                                    </button>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Destination</h6>
+                                    <div class="mb-3">
+                                        <label class="form-label">Connection</label>
+                                        <input type="text" class="form-control" id="mapDestConnection" value="Destination Database" readonly aria-label="Map Dest Connection">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Database</label>
+                                        <div class="input-group">
+                                            <select class="form-select" id="mapDestDatabase" required aria-label="Map Dest Database">
+                                                <option value="">Select database...</option>
+                                            </select>
+                                            <button type="button" class="btn btn-outline-secondary" onclick="loadDestDatabases()" title="Load databases">
+                                                <i class="bi bi-arrow-clockwise"></i>
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">Database from connection config</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Schema</label>
+                                        <select class="form-select" id="mapDestSchema" required aria-label="Map Dest Schema">
+                                            <option value="">Select schema...</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Table</label>
+                                        <select class="form-select" id="mapDestTable" required aria-label="Map Dest Table">
+                                            <option value="">Select table...</option>
+                                        </select>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-primary" onclick="loadDestTables()">
+                                        <i class="bi bi-arrow-clockwise"></i> Load Tables
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-info" onclick="loadDestColumns()">
+                                        <i class="bi bi-list-ul"></i> Load Columns
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Step 2: Column Mapping -->
+                        <div class="step-section" id="step2">
+                            <h6 class="text-primary mb-3"><i class="bi bi-2-circle"></i> Column Mapping</h6>
+                            <div class="mb-3">
+                                <button type="button" class="btn btn-sm btn-success" onclick="autoMapColumns()">
+                                    <i class="bi bi-magic"></i> Auto-Map Matching Columns
+                                </button>
+                                <button type="button" class="btn btn-sm btn-primary" onclick="addColumnMapping()">
+                                    <i class="bi bi-plus-circle"></i> Add Column Mapping
+                                </button>
+                                <button type="button" class="btn btn-sm btn-danger" onclick="clearColumnMappings()">
+                                    <i class="bi bi-trash"></i> Clear All
+                                </button>
+                            </div>
+                            <div id="columnMappingsContainer" class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
+                                <p class="text-muted">Load source and destination columns, then add mappings.</p>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Step 3: Options -->
+                        <div class="step-section" id="step3">
+                            <h6 class="text-primary mb-3"><i class="bi bi-3-circle"></i> Synchronization Options</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Mapping ID</label>
+                                        <input type="text" class="form-control" id="mapId" placeholder="Auto-generated" readonly aria-label="Auto-generated">
+                                        <small class="text-muted">Auto-generated based on table names</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3 form-check">
+                                        <input type="checkbox" class="form-check-input" id="mapEnabled" checked>
+                                        <label class="form-check-label" for="mapEnabled">Enable Mapping</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="mapSyncInserts" checked>
+                                        <label class="form-check-label" for="mapSyncInserts">
+                                            <i class="bi bi-plus-circle text-success"></i> Sync Inserts
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="mapSyncUpdates" checked>
+                                        <label class="form-check-label" for="mapSyncUpdates">
+                                            <i class="bi bi-pencil text-warning"></i> Sync Updates
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="mapSyncDeletes" checked>
+                                        <label class="form-check-label" for="mapSyncDeletes">
+                                            <i class="bi bi-trash text-danger"></i> Sync Deletes
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr class="my-3">
+                            
+                            <!-- DuckDB Transformation -->
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="mapUseDuckDB" onchange="toggleDuckDBOptions()">
+                                    <label class="form-check-label fw-bold" for="mapUseDuckDB">
+                                        <i class="bi bi-gear-wide-connected"></i> Use DuckDB In-Memory Transformation
+                                    </label>
+                                </div>
+                                <small class="text-muted">Process and reshape data using DuckDB before syncing to destination</small>
+                            </div>
+                            
+                            <div id="duckdbOptions" style="display: none;">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Transformation Script</label>
+                                            <select class="form-select" id="mapDuckDBScript" onchange="loadDuckDBScriptPreview()" aria-label="Map Duck DBScript">
+                                                <option value="">Select script...</option>
+                                                <option value="__inline__">Inline Script (Enter Below)</option>
+                                            </select>
+                                            <small class="text-muted">Choose from templates or custom scripts</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Or Upload Script File</label>
+                                            <div class="input-group">
+                                                <input type="file" class="form-control" id="mapDuckDBScriptFile" accept=".sql" aria-label="Map Duck DBScript File">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="uploadDuckDBScript()">
+                                                    <i class="bi bi-upload"></i> Upload
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Script Content</label>
+                                    <textarea class="form-control font-monospace" id="mapDuckDBScriptContent" rows="6" 
+                                              placeholder="-- Enter DuckDB SQL transformation script&#10;-- Use {source_table} as placeholder for source data&#10;&#10;SELECT * FROM {source_table} WHERE condition = true;" aria-label="-- Enter DuckDB SQL transformation script&#10;-- Use {source_table} as placeholder for source data&#10;&#10;SELECT * FROM {source_table} WHERE condition = true;"></textarea>
+                                    <small class="text-muted">
+                                        Available variables: <code>{source_table}</code>, <code>{destination_table}</code>, <code>{mapping_id}</code>
+                                    </small>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="validateDuckDBScript()">
+                                        <i class="bi bi-check-circle"></i> Validate Script
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-info" onclick="viewDuckDBScripts()">
+                                        <i class="bi bi-folder2-open"></i> Browse Scripts
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <hr class="my-3">
+                            
+                            <!-- Initial Snapshot -->
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="mapPerformSnapshot">
+                                    <label class="form-check-label fw-bold" for="mapPerformSnapshot">
+                                        <i class="bi bi-download"></i> Perform Initial Snapshot
+                                    </label>
+                                </div>
+                                <small class="text-muted">
+                                    Truncate destination table and load all existing data from source before starting CDC monitoring.
+                                    <br><strong>Note:</strong> Snapshot runs only once per mapping. Large tables are processed in batches.
+                                </small>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="saveMappingFromModal()">
+                        <i class="bi bi-save"></i> Create Mapping
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Working Set Modal -->
+    <div class="modal fade" id="createWorksetModal" tabindex="-1" aria-labelledby="createWorksetModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createWorksetModalLabel">
+                        <i class="bi bi-collection"></i> Create Working Set
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createWorksetForm">
+                        <!-- Step 1: Basic Information -->
+                        <div class="step-section" id="wsStep1">
+                            <h6 class="text-primary mb-3"><i class="bi bi-1-circle"></i> Basic Information</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Working Set ID</label>
+                                        <input type="text" class="form-control" id="wsId" placeholder="e.g., workset_customers_prod" required aria-label="e.g., workset_customers_prod">
+                                        <small class="text-muted">Unique identifier for this working set</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Name</label>
+                                        <input type="text" class="form-control" id="wsName" placeholder="e.g., Customer Production Sync" required aria-label="e.g., Customer Production Sync">
+                                        <small class="text-muted">Friendly name for display</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Description</label>
+                                <textarea class="form-control" id="wsDescription" rows="2" placeholder="Optional description of this working set" aria-label="Optional description of this working set"></textarea>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="wsSetActive">
+                                <label class="form-check-label" for="wsSetActive">
+                                    Set as active working set immediately
+                                </label>
+                            </div>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="wsDataIngestionCheck">
+                                <label class="form-check-label" for="wsDataIngestionCheck">
+                                    Enable data ingestion quality check
+                                </label>
+                                <small class="form-text text-muted d-block">
+                                    When enabled, data will be analyzed for quality issues before synchronization
+                                </small>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Step 2: Source Connection -->
+                        <div class="step-section" id="wsStep2">
+                            <h6 class="text-primary mb-3"><i class="bi bi-2-circle"></i> Source Connection</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Connection Name</label>
+                                        <input type="text" class="form-control" id="wsSrcName" value="Source Database" required aria-label="Ws Src Name">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Server</label>
+                                        <input type="text" class="form-control" id="wsSrcServer" placeholder="localhost" required aria-label="localhost">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Database</label>
+                                        <input type="text" class="form-control" id="wsSrcDatabase" required aria-label="Ws Src Database">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Port</label>
+                                        <input type="number" class="form-control" id="wsSrcPort" value="1433" aria-label="Ws Src Port">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="wsSrcWindowsAuth" checked onchange="toggleWsSourceCredentials()">
+                                    <label class="form-check-label" for="wsSrcWindowsAuth">
+                                        Use Windows Authentication
+                                    </label>
+                                </div>
+                            </div>
+                            <div id="wsSrcCredentials" style="display: none;">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Username</label>
+                                            <input type="text" class="form-control" id="wsSrcUsername" aria-label="Ws Src Username">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Password</label>
+                                            <input type="password" class="form-control" id="wsSrcPassword" aria-label="Ws Src Password">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="testWorksetConnection('source')">
+                                <i class="bi bi-check-circle"></i> Test Source Connection
+                            </button>
+                            <div id="wsSrcConnectionStatus" class="mt-2"></div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Step 3: Destination Connection -->
+                        <div class="step-section" id="wsStep3">
+                            <h6 class="text-primary mb-3"><i class="bi bi-3-circle"></i> Destination Connection</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Connection Name</label>
+                                        <input type="text" class="form-control" id="wsDestName" value="Destination Database" required aria-label="Ws Dest Name">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Server</label>
+                                        <input type="text" class="form-control" id="wsDestServer" placeholder="localhost" required aria-label="localhost">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Database</label>
+                                        <input type="text" class="form-control" id="wsDestDatabase" required aria-label="Ws Dest Database">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Port</label>
+                                        <input type="number" class="form-control" id="wsDestPort" value="1433" aria-label="Ws Dest Port">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="wsDestWindowsAuth" checked onchange="toggleWsDestCredentials()">
+                                    <label class="form-check-label" for="wsDestWindowsAuth">
+                                        Use Windows Authentication
+                                    </label>
+                                </div>
+                            </div>
+                            <div id="wsDestCredentials" style="display: none;">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Username</label>
+                                            <input type="text" class="form-control" id="wsDestUsername" aria-label="Ws Dest Username">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Password</label>
+                                            <input type="password" class="form-control" id="wsDestPassword" aria-label="Ws Dest Password">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="testWorksetConnection('destination')">
+                                <i class="bi bi-check-circle"></i> Test Destination Connection
+                            </button>
+                            <div id="wsDestConnectionStatus" class="mt-2"></div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Step 4: Select Mappings -->
+                        <div class="step-section" id="wsStep4">
+                            <h6 class="text-primary mb-3"><i class="bi bi-4-circle"></i> Select Table Mappings</h6>
+                            <div class="mb-3">
+                                <button type="button" class="btn btn-sm btn-secondary" onclick="loadAvailableMappingsForWorkset()">
+                                    <i class="bi bi-arrow-clockwise"></i> Load Available Mappings
+                                </button>
+                            </div>
+                            <div id="wsMappingsContainer" class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
+                                <p class="text-muted">Click "Load Available Mappings" to see available table mappings</p>
+                            </div>
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <strong>Selected:</strong> <span id="wsMappingCount">0</span> mapping(s)
+                                </small>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="saveWorksetFromModal()">
+                        <i class="bi bi-save"></i> Create Working Set
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Connection Modal -->
+    <div class="modal fade" id="connectionModal" tabindex="-1" aria-labelledby="connectionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="connectionModalLabel">
+                        <i class="bi bi-plug"></i> <span id="connectionModalTitle">New Connection</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="connectionForm">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Connection ID</label>
+                                <input type="text" class="form-control" id="connId" required aria-label="Conn Id">
+                                <small class="text-muted">Unique identifier (e.g., conn_crm_prod)</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Connection Name *</label>
+                                <input type="text" class="form-control" id="connName" required aria-label="Conn Name">
+                                <small class="text-muted">Friendly display name</small>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <label class="form-label">Server *</label>
+                                <input type="text" class="form-control" id="connServer" placeholder="localhost or server.company.com" required aria-label="localhost or server.company.com">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Port (optional)</label>
+                                <input type="number" class="form-control" id="connPort" placeholder="1433" aria-label="1433">
+                                <small class="text-muted">Leave empty for default</small>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Database *</label>
+                            <input type="text" class="form-control" id="connDatabase" required aria-label="Conn Database">
+                        </div>
+
+                        <div class="mb-3 form-check form-switch">
+                            <input type="checkbox" class="form-check-input" id="connWindowsAuth" checked onchange="toggleCredentials()">
+                            <label class="form-check-label" for="connWindowsAuth">Use Windows Authentication</label>
+                        </div>
+
+                        <div id="connCredentialsDiv" style="display: none;">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="connUsername" aria-label="Conn Username">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="connPassword" aria-label="Conn Password">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Engine</label>
+                                <select class="form-select" id="connEngine" onchange="toggleEngineFields()" aria-label="Conn Engine">
+                                    <option value="mssql" selected>SQL Server (CDC)</option>
+                                    <option value="postgresql">PostgreSQL (logical slot)</option>
+                                    <option value="mariadb">MariaDB / MySQL (binlog)</option>
+                                    <option value="mongodb">MongoDB (change streams)</option>
+                                    <option value="oracle">Oracle (LogMiner)</option>
+                                    <option value="sqlite">SQLite (destination only)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8" id="connDriverDiv">
+                                <label class="form-label">ODBC Driver</label>
+                                <select class="form-select" id="connDriver" aria-label="Conn Driver">
+                                    <option value="ODBC Driver 18 for SQL Server" selected>ODBC Driver 18 for SQL Server</option>
+                                    <option value="ODBC Driver 17 for SQL Server">ODBC Driver 17 for SQL Server</option>
+                                    <option value="SQL Server">SQL Server</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Engine options (JSON)</label>
+                            <textarea class="form-control font-monospace" id="connOptions" rows="2" placeholder='{"slot_name": "cdcsync_crm", "plugin": "wal2json"}' aria-label="Conn Options"></textarea>
+                            <small class="text-muted" id="connOptionsHint">SQL Server: capture_instances, service_broker_queue, read_only_intent, poll_min_seconds, poll_max_seconds</small>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-shield-lock"></i> Passwords can be stored as references: <code>${env:NAME}</code> or <code>${file:/run/secrets/name}</code> – resolved at connect time, never written to disk.
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" onclick="testConnectionInModal()">
+                        <i class="bi bi-check-circle"></i> Test Connection
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveConnection()">
+                        <i class="bi bi-save"></i> Save Connection
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unified Mapping Wizard Modal -->
+    <div class="modal fade" id="mappingWizardModal" tabindex="-1" aria-labelledby="mappingWizardModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="mappingWizardModalLabel">
+                        <i class="bi bi-magic"></i> Mapping Creation Wizard
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Wizard Steps Indicator -->
+                    <ul class="nav nav-pills mb-4" id="wizardSteps">
+                        <li class="nav-item" id="wizardStep1">
+                            <span class="nav-link active">1. Type</span>
+                        </li>
+                        <li class="nav-item" id="wizardStep2">
+                            <span class="nav-link">2. Configure</span>
+                        </li>
+                        <li class="nav-item" id="wizardStep3">
+                            <span class="nav-link">3. Sync Options</span>
+                        </li>
+                        <li class="nav-item" id="wizardStep4">
+                            <span class="nav-link">4. Worksets</span>
+                        </li>
+                        <li class="nav-item" id="wizardStep5">
+                            <span class="nav-link">5. Review</span>
+                        </li>
+                    </ul>
+                    
+                    <!-- Step 1: Select Mapping Type -->
+                    <div id="wizardStepContent1">
+                        <h6 class="text-primary mb-3"><i class="bi bi-1-circle"></i> Select Mapping Type</h6>
+                        <div class="mb-3">
+                            <label class="form-label">Mapping Type</label>
+                            <select class="form-select" id="wizardMappingType" onchange="onMappingTypeChange()" required aria-label="Wizard Mapping Type">
+                                <option value="">-- Select Type --</option>
+                                <option value="table">Table-based Mapping</option>
+                                <option value="sql">SQL-based Mapping</option>
+                            </select>
+                            <small class="text-muted">
+                                <strong>Table-based:</strong> Maps columns between source and destination tables with CDC monitoring.<br>
+                                <strong>SQL-based:</strong> Uses custom SQL queries for complex transformations or multi-table joins.
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 2: Configure Based on Type -->
+                    <div id="wizardStepContent2" style="display: none;">
+                        <h6 class="text-primary mb-3"><i class="bi bi-2-circle"></i> Configure Mapping</h6>
+
+                        <!-- Connection Configuration for Testing -->
+                        <div class="card mb-3 border-info">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0"><i class="bi bi-plug"></i> Connection (for testing queries and loading columns)</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Connection Type</label>
+                                    <select class="form-select" id="wizardConnectionType" onchange="onWizardConnectionTypeChange()" aria-label="Wizard Connection Type">
+                                        <option value="library">Saved Connection</option>
+                                        <option value="workset">Use Existing Working Set</option>
+                                    </select>
+                                    <small class="text-muted">Choose how to connect to the database for testing</small>
+                                </div>
+
+                                <!-- Saved Connection Selection -->
+                                <div id="wizardConnectionLibraryDiv">
+                                    <div class="mb-2">
+                                        <label class="form-label">Select Connection</label>
+                                        <select class="form-select" id="wizardConnectionLibrary" aria-label="Wizard Connection Library">
+                                            <option value="">-- Select Connection --</option>
+                                        </select>
+                                        <small class="text-muted">Choose a saved connection from the library</small>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="showConnectionModal()">
+                                            <i class="bi bi-plus-circle"></i> Quick Create Connection
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="loadConnectionsForWizard()">
+                                            <i class="bi bi-arrow-clockwise"></i> Refresh List
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Working Set Selection -->
+                                <div id="wizardConnectionWorksetDiv" style="display: none;">
+                                    <label class="form-label">Select Working Set</label>
+                                    <select class="form-select" id="wizardConnectionWorkset" aria-label="Wizard Connection Workset">
+                                        <option value="">-- Select Working Set --</option>
+                                    </select>
+                                    <small class="text-muted">Use the source connection from an existing working set</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Common Fields -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Mapping ID</label>
+                                <input type="text" class="form-control" id="wizardMappingId" required aria-label="Wizard Mapping Id">
+                                <small class="text-muted">Unique identifier (e.g., mapping_customers)</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Mapping Name</label>
+                                <input type="text" class="form-control" id="wizardMappingName" required aria-label="Wizard Mapping Name">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Destination Schema</label>
+                                <input type="text" class="form-control" id="wizardDestSchema" required placeholder="dbo" aria-label="dbo">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Destination Table</label>
+                                <input type="text" class="form-control" id="wizardDestTable" required aria-label="Wizard Dest Table">
+                            </div>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="wizardEnabled" checked>
+                            <label class="form-check-label" for="wizardEnabled">Enabled</label>
+                        </div>
+
+                        <!-- TABLE-specific Section -->
+                        <div id="wizardTableSection" style="display: none;">
+                            <hr>
+                            <h6>Table Configuration</h6>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Source Schema</label>
+                                    <input type="text" class="form-control" id="wizardSrcSchema" placeholder="dbo" aria-label="dbo">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Source Table</label>
+                                    <input type="text" class="form-control" id="wizardSrcTable" aria-label="Wizard Src Table">
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label"><strong>Column Mappings</strong></label>
+                                <div class="mb-2">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="wizardLoadColumns()">
+                                        <i class="bi bi-download"></i> Load Columns
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-success" onclick="wizardAutoMapColumns()">
+                                        <i class="bi bi-magic"></i> Auto-map
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="wizardAddColumnMapping()">
+                                        <i class="bi bi-plus"></i> Add Manual Mapping
+                                    </button>
+                                </div>
+                                <div id="wizardColumnMappingsContainer" class="border rounded p-3" style="max-height: 400px; overflow-y: auto; background-color: #f8f9fa;">
+                                    <p class="text-muted">No column mappings. Click "Load Columns" and "Auto-map" to start.</p>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="wizardSyncInserts" checked>
+                                        <label class="form-check-label" for="wizardSyncInserts">Sync Inserts</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="wizardSyncUpdates" checked>
+                                        <label class="form-check-label" for="wizardSyncUpdates">Sync Updates</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="wizardSyncDeletes" checked>
+                                        <label class="form-check-label" for="wizardSyncDeletes">Sync Deletes</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="wizardPerformSnapshot">
+                                <label class="form-check-label" for="wizardPerformSnapshot">Perform Initial Snapshot</label>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="wizardUseDuckDB">
+                                <label class="form-check-label" for="wizardUseDuckDB">Use DuckDB Transformation</label>
+                            </div>
+                        </div>
+
+                        <!-- SQL-specific Section -->
+                        <div id="wizardSQLSection" style="display: none;">
+                            <hr>
+                            <h6>SQL Configuration</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Source SQL Query</label>
+                                <textarea class="form-control font-monospace" id="wizardSourceQuery" rows="8"
+                                          placeholder="SELECT * FROM schema.table WHERE condition" aria-label="SELECT * FROM schema.table WHERE condition"></textarea>
+                                <div class="mt-2">
+                                    <button type="button" class="btn btn-sm btn-outline-info" onclick="testSQLQuery()">
+                                        <i class="bi bi-check-circle"></i> Test Query
+                                    </button>
+                                    <small class="text-muted ms-2">Requires connection configuration above</small>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Key Columns (for Upsert mode)</label>
+                                <input type="text" class="form-control" id="wizardKeyColumns"
+                                       placeholder="id, customer_id (comma-separated)" aria-label="id, customer_id (comma-separated)">
+                                <small class="text-muted">Required for upsert sync mode</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Custom INSERT Query (Optional)</label>
+                                <textarea class="form-control font-monospace" id="wizardInsertQuery" rows="3" aria-label="Wizard Insert Query"></textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Custom UPDATE Query (Optional)</label>
+                                <textarea class="form-control font-monospace" id="wizardUpdateQuery" rows="3" aria-label="Wizard Update Query"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 3: Sync Options -->
+                    <div id="wizardStepContent3" style="display: none;">
+                        <h6 class="text-primary mb-3"><i class="bi bi-3-circle"></i> Sync Options</h6>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Sync Mode</label>
+                                <select class="form-select" id="wizardSyncMode" aria-label="Wizard Sync Mode">
+                                    <option value="full">Full (Replace All)</option>
+                                    <option value="incremental">Incremental (Append Only)</option>
+                                    <option value="upsert">Upsert (Merge/Update)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Schedule (Cron Expression)</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control font-monospace" id="wizardSyncSchedule" 
+                                           placeholder="0 0 * * *" aria-label="0 0 * * *">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="showCronHelper()">
+                                        <i class="bi bi-question-circle"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted">Leave empty for manual execution</small>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Batch Size</label>
+                                <input type="number" class="form-control" id="wizardBatchSize" value="1000" min="1" aria-label="Wizard Batch Size">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Timeout (seconds)</label>
+                                <input type="number" class="form-control" id="wizardTimeout" value="300" min="1" aria-label="Wizard Timeout">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 4: Assign to Worksets -->
+                    <div id="wizardStepContent4" style="display: none;">
+                        <h6 class="text-primary mb-3"><i class="bi bi-4-circle"></i> Assign to Working Sets</h6>
+                        <div id="wizardWorksets">
+                            <p class="text-muted">Loading worksets...</p>
+                        </div>
+                        <small class="text-muted">Select one or more working sets to assign this mapping to.</small>
+                    </div>
+                    
+                    <!-- Step 5: Review -->
+                    <div id="wizardStepContent5" style="display: none;">
+                        <h6 class="text-primary mb-3"><i class="bi bi-5-circle"></i> Review and Save</h6>
+                        <div id="wizardReviewContent">
+                            <p class="text-muted">Review your mapping configuration...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="wizardPrevBtn" onclick="prevWizardStep()" disabled>
+                        <i class="bi bi-arrow-left"></i> Previous
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="wizardNextBtn" onclick="nextWizardStep()">
+                        Next <i class="bi bi-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Multi-Source Mapping Builder Modal -->
+    <div class="modal fade" id="multiSourceModal" tabindex="-1" aria-labelledby="multiSourceModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="multiSourceModalLabel">
+                        <i class="bi bi-diagram-3"></i> Multi-Source Mapping Builder
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Basic Info -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Mapping ID</label>
+                            <input type="text" class="form-control" id="msId" placeholder="multi_customer_360" aria-label="multi_customer_360">
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Mapping Name</label>
+                            <input type="text" class="form-control" id="msName" placeholder="Customer 360 View" aria-label="Customer 360 View">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Destination Schema</label>
+                            <input type="text" class="form-control" id="msDestSchema" value="dbo" aria-label="Ms Dest Schema">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Destination Table</label>
+                            <input type="text" class="form-control" id="msDestTable" placeholder="Customer360" aria-label="Customer360">
+                        </div>
+                    </div>
+
+                    <!-- Sources Section -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-database"></i> Sources</span>
+                            <button class="btn btn-sm btn-light" onclick="showAddSourceModal()">
+                                <i class="bi bi-plus"></i> Add Source
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div id="msSourcesList"></div>
+                        </div>
+                    </div>
+
+                    <!-- Operations Section -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-gear"></i> Merge Operations</span>
+                            <button class="btn btn-sm btn-light" onclick="showAddOperationModal()">
+                                <i class="bi bi-plus"></i> Add Operation
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div id="msOperationsList"></div>
+                        </div>
+                    </div>
+
+                    <!-- Output Columns Section -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-warning d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-arrow-right-square"></i> Output Columns</span>
+                            <button class="btn btn-sm btn-dark" onclick="showAddOutputColumnModal()">
+                                <i class="bi bi-plus"></i> Add Column
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div id="msOutputColumnsList"></div>
+                        </div>
+                    </div>
+
+                    <!-- Preview Results -->
+                    <div class="card">
+                        <div class="card-header bg-secondary text-white">
+                            <i class="bi bi-eye"></i> Preview
+                        </div>
+                        <div class="card-body">
+                            <div id="msPreviewResults">
+                                <p class="text-muted">Click "Preview" to see merge results</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" onclick="previewMultiSourceMerge()">
+                        <i class="bi bi-eye"></i> Preview
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="saveMultiSourceMapping()">
+                        <i class="bi bi-save"></i> Save Mapping
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Source Modal -->
+    <div class="modal fade" id="addSourceModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Source</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="multiSourceForm">
+                        <input type="hidden" id="msSourceId">
+                        <div class="mb-3">
+                            <label class="form-label">Connection</label>
+                            <select class="form-select" id="msSourceConnection" required aria-label="Ms Source Connection">
+                                <option value="">-- Select Connection --</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Alias (used in queries)</label>
+                            <input type="text" class="form-control" id="msSourceAlias" placeholder="crm" required aria-label="crm">
+                            <small class="text-muted">Short identifier like: crm, erp, support</small>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Schema</label>
+                                <input type="text" class="form-control" id="msSourceSchema" value="dbo" required aria-label="Ms Source Schema">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Table</label>
+                                <input type="text" class="form-control" id="msSourceTable" required aria-label="Ms Source Table">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">WHERE Clause (optional)</label>
+                            <input type="text" class="form-control" id="msSourceWhere" placeholder="status = 'active'" aria-label="status = 'active'">
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="msSourceEnableCDC" checked>
+                            <label class="form-check-label" for="msSourceEnableCDC">
+                                Enable CDC for this source
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="addSource()">Add Source</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Operation Modal -->
+    <div class="modal fade" id="addOperationModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Merge Operation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="mergeOperationForm">
+                        <div class="mb-3">
+                            <label class="form-label">Operation Type</label>
+                            <select class="form-select" id="msOpType" onchange="onOperationTypeChange()" aria-label="Ms Op Type">
+                                <option value="join">JOIN</option>
+                                <option value="union">UNION</option>
+                                <option value="intersect">INTERSECT</option>
+                                <option value="except">EXCEPT</option>
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Left Source</label>
+                                <select class="form-select" id="msOpLeftSource" aria-label="Ms Op Left Source"></select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Right Source</label>
+                                <select class="form-select" id="msOpRightSource" aria-label="Ms Op Right Source"></select>
+                            </div>
+                        </div>
+
+                        <!-- JOIN-specific fields -->
+                        <div id="msOpJoinFields">
+                            <div class="mb-3">
+                                <label class="form-label">Join Type</label>
+                                <select class="form-select" id="msOpJoinType" aria-label="Ms Op Join Type">
+                                    <option value="INNER">INNER JOIN</option>
+                                    <option value="LEFT">LEFT JOIN</option>
+                                    <option value="RIGHT">RIGHT JOIN</option>
+                                    <option value="FULL">FULL OUTER JOIN</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">ON Condition</label>
+                                <input type="text" class="form-control" id="msOpOnCondition" placeholder="left.customer_id = right.customer_id" aria-label="left.customer_id = right.customer_id">
+                            </div>
+                        </div>
+
+                        <!-- UNION-specific fields -->
+                        <div id="msOpUnionFields" style="display: none;">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="msOpUnionAll" checked>
+                                <label class="form-check-label" for="msOpUnionAll">
+                                    UNION ALL (keep duplicates)
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="addOperation()">Add Operation</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Output Column Modal -->
+    <div class="modal fade" id="addOutputColumnModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Output Column</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="outputColumnForm">
+                        <div class="mb-3">
+                            <label class="form-label">Source Alias</label>
+                            <select class="form-select" id="msOutSourceAlias" aria-label="Ms Out Source Alias"></select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Source Column</label>
+                            <input type="text" class="form-control" id="msOutSourceColumn" placeholder="customer_id" aria-label="customer_id">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Destination Column</label>
+                            <input type="text" class="form-control" id="msOutDestColumn" placeholder="customer_id" aria-label="customer_id">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Transformation (optional)</label>
+                            <input type="text" class="form-control" id="msOutTransformation" placeholder="UPPER(customer_name)" aria-label="UPPER(customer_name)">
+                            <small class="text-muted">SQL expression for transformation</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="addOutputColumn()">Add Column</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Visual Merge Builder Modal -->
+    <div class="modal fade" id="visualMergeBuilderModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-bounding-box"></i> Visual Merge Builder
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <!-- Left Sidebar - Node Palette -->
+                            <div class="col-md-2 border-end p-3">
+                                <div class="node-palette">
+                                    <div class="palette-section">
+                                        <div class="palette-section-title">Sources</div>
+                                        <button class="btn btn-sm btn-outline-primary palette-item" onclick="showAddSourceNodeDialog()">
+                                            <i class="bi bi-database"></i> Add Source
+                                        </button>
+                                    </div>
+
+                                    <div class="palette-section">
+                                        <div class="palette-section-title">Operations</div>
+                                        <button class="btn btn-sm btn-outline-info palette-item" onclick="addOperationNode('join')">
+                                            <i class="bi bi-diagram-3"></i> JOIN
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-info palette-item" onclick="addOperationNode('union')">
+                                            <i class="bi bi-union"></i> UNION
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-info palette-item" onclick="addOperationNode('intersect')">
+                                            <i class="bi bi-intersect"></i> INTERSECT
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-info palette-item" onclick="addOperationNode('except')">
+                                            <i class="bi bi-dash-circle"></i> EXCEPT
+                                        </button>
+                                    </div>
+
+                                    <div class="palette-section">
+                                        <div class="palette-section-title">Output</div>
+                                        <button class="btn btn-sm btn-outline-success palette-item" onclick="addDestinationNode()">
+                                            <i class="bi bi-box-arrow-in-down"></i> Destination
+                                        </button>
+                                    </div>
+
+                                    <hr>
+
+                                    <div class="palette-section">
+                                        <div class="palette-section-title">Load Existing</div>
+                                        <select class="form-select form-select-sm mb-2" id="visualLoadMappingSelect" aria-label="Visual Load Mapping Select">
+                                            <option value="">-- Select Mapping --</option>
+                                        </select>
+                                        <button class="btn btn-sm btn-outline-primary palette-item w-100" onclick="loadMappingIntoVisualizer()">
+                                            <i class="bi bi-download"></i> Load
+                                        </button>
+                                    </div>
+
+                                    <hr>
+
+                                    <div class="palette-section">
+                                        <div class="palette-section-title">Actions</div>
+                                        <button class="btn btn-sm btn-outline-danger palette-item" onclick="clearVisualCanvas()">
+                                            <i class="bi bi-trash"></i> Clear All
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Center - Canvas -->
+                            <div class="col-md-7 p-3">
+                                <div class="visual-toolbar mb-2">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <input type="text" class="form-control form-control-sm" id="visualMappingId" placeholder="Mapping ID" aria-label="Mapping ID">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <input type="text" class="form-control form-control-sm" id="visualMappingName" placeholder="Mapping Name" aria-label="Mapping Name">
+                                        </div>
+                                    </div>
+                                    <div class="row mt-2">
+                                        <div class="col-md-6">
+                                            <input type="text" class="form-control form-control-sm" id="visualDestSchema" value="dbo" placeholder="Dest Schema" aria-label="Dest Schema">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <input type="text" class="form-control form-control-sm" id="visualDestTable" placeholder="Dest Table" aria-label="Dest Table">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="visual-merge-canvas-container">
+                                    <div id="visualMergeCanvas"></div>
+                                </div>
+
+                                <div class="mt-2 text-muted">
+                                    <small><i class="bi bi-info-circle"></i> Drag nodes from the palette, connect with arrows, configure operations</small>
+                                </div>
+                            </div>
+
+                            <!-- Right Sidebar - Preview -->
+                            <div class="col-md-3 border-start p-3">
+                                <h6>Preview</h6>
+                                <div class="visual-preview-section" id="visualPreviewResults">
+                                    <p class="text-muted">Click Preview to see results</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" onclick="previewVisualMerge()">
+                        <i class="bi bi-eye"></i> Preview
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-info" onclick="saveVisualMerge()">
+                        <i class="bi bi-save"></i> Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Visual Source Modal -->
+    <div class="modal fade" id="addVisualSourceModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Source Node</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="visualSourceForm">
+                        <div class="mb-3">
+                            <label class="form-label">Connection</label>
+                            <select class="form-select" id="visualSourceConnection" required aria-label="Visual Source Connection">
+                                <option value="">-- Select --</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Alias</label>
+                            <input type="text" class="form-control" id="visualSourceAlias" placeholder="crm" required aria-label="crm">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Schema</label>
+                                <input type="text" class="form-control" id="visualSourceSchema" value="dbo" required aria-label="Visual Source Schema">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Table</label>
+                                <input type="text" class="form-control" id="visualSourceTable" required aria-label="Visual Source Table">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">WHERE Clause (optional)</label>
+                            <input type="text" class="form-control" id="visualSourceWhere" aria-label="Visual Source Where">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="addSourceNodeToCanvas()">Add to Canvas</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configure JOIN Modal -->
+    <div class="modal fade" id="configureJoinModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Configure JOIN</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Join Type</label>
+                        <select class="form-select" id="visualJoinType" aria-label="Visual Join Type">
+                            <option value="INNER">INNER JOIN</option>
+                            <option value="LEFT">LEFT JOIN</option>
+                            <option value="RIGHT">RIGHT JOIN</option>
+                            <option value="FULL">FULL OUTER JOIN</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ON Condition</label>
+                        <input type="text" class="form-control" id="visualOnCondition" placeholder="left.id = right.customer_id" aria-label="left.id = right.customer_id">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveJoinConfig()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configure UNION Modal -->
+    <div class="modal fade" id="configureUnionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Configure UNION</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="visualUnionAll" checked>
+                        <label class="form-check-label" for="visualUnionAll">
+                            UNION ALL (keep duplicates)
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveUnionConfig()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <link rel="stylesheet" href="/static/visual-merge-builder.css">
+    <script src="/static/cdc_toolsets_app.js"></script>
+    <script src="/static/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/jsplumb/browser-ui/js/jsplumb.browser-ui.umd.js"></script>
+    <script src="/static/admin.js"></script>
+    <script src="/static/workflow-designer.js"></script>
+    <script src="/static/mapping-wizard.js"></script>
+    <script src="/static/connections.js"></script>
+    <script src="/static/multi-source-builder.js"></script>
+    <script src="/static/visual-merge-builder.js"></script>
+    <script src="/static/data-ingestion.js"></script>
+</body>
+</html>
+
+
+
+
+

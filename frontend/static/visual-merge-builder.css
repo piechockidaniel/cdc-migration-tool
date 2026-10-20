@@ -1,0 +1,213 @@
+/* Visual Merge Builder Styles */
+
+.visual-merge-canvas-container {
+    position: relative;
+    width: 100%;
+    height: 600px;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #f8f9fa 1px, transparent 1px),
+                linear-gradient(#f8f9fa 1px, transparent 1px);
+    background-size: 20px 20px;
+    overflow: auto;
+}
+
+#visualMergeCanvas {
+    position: relative;
+    width: 2000px;
+    height: 2000px;
+    min-height: 600px;
+}
+
+/* Node Styles */
+.visual-merge-node {
+    position: absolute;
+    width: 180px;
+    background: white;
+    border: 2px solid #cbd5e1;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    cursor: move;
+    transition: all 0.2s;
+    z-index: 1000;
+}
+
+.visual-merge-node:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+}
+
+.visual-merge-node.jtk-drag {
+    opacity: 0.8;
+}
+
+/* Node Header */
+.visual-merge-node .node-header {
+    padding: 8px 12px;
+    border-radius: 6px 6px 0 0;
+    font-weight: 600;
+    font-size: 14px;
+    text-align: center;
+}
+
+/* Node Body */
+.visual-merge-node .node-body {
+    padding: 12px;
+    min-height: 50px;
+    font-size: 12px;
+    text-align: center;
+}
+
+/* Node Types */
+.node-source {
+    border-color: #3b82f6;
+}
+
+.node-operation {
+    border-color: #06b6d4;
+}
+
+.node-destination {
+    border-color: #10b981;
+}
+
+/* Node Ports */
+.visual-merge-node .node-ports {
+    position: relative;
+}
+
+.port {
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    border: 2px solid #3b82f6;
+    border-radius: 50%;
+    position: absolute;
+    z-index: 1001;
+}
+
+.port-input {
+    left: -7px;
+}
+
+.port-input-left {
+    top: 20px;
+}
+
+.port-input-right {
+    top: 50px;
+}
+
+.port-output {
+    right: -7px;
+    top: 35px;
+}
+
+.port:hover {
+    background: #3b82f6;
+    transform: scale(1.3);
+}
+
+/* Node Delete Button */
+.node-delete {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+    border-radius: 50%;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.visual-merge-node:hover .node-delete {
+    opacity: 1;
+}
+
+.node-delete:hover {
+    background: #dc2626;
+}
+
+/* Node Palette */
+.node-palette {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.palette-section {
+    margin-bottom: 12px;
+}
+
+.palette-section-title {
+    font-weight: 600;
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.palette-item {
+    width: 100%;
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 13px;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.palette-item i {
+    margin-right: 8px;
+}
+
+.palette-item:hover {
+    transform: translateX(4px);
+}
+
+/* Connection Styling */
+.jtk-connector {
+    z-index: 4;
+}
+
+.jtk-endpoint {
+    z-index: 5;
+}
+
+.jtk-overlay {
+    z-index: 6;
+}
+
+/* Toolbar */
+.visual-toolbar {
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 8px 8px 0 0;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* Preview Section */
+.visual-preview-section {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .visual-merge-canvas-container {
+        height: 400px;
+    }
+
+    .visual-merge-node {
+        width: 150px;
+    }
+}

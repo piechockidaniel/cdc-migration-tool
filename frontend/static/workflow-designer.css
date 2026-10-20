@@ -1,0 +1,428 @@
+/* Visual Workflow Designer Styles */
+
+/* Node Palette Items */
+.node-palette-item {
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    cursor: move;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+
+.node-palette-item:hover {
+    background-color: #e9ecef;
+    border-color: #0d6efd;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.node-palette-item:active {
+    transform: scale(0.98);
+}
+
+/* Workflow Canvas */
+#workflow-canvas {
+    background-image: 
+        linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+    background-position: -1px -1px;
+}
+
+#workflow-canvas-container {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+/* Workflow Nodes */
+.workflow-node {
+    position: absolute;
+    min-width: 160px;
+    min-height: 60px;
+    background-color: #ffffff;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    padding: 10px;
+    cursor: move;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.2s;
+    z-index: 10;
+}
+
+.workflow-node:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-color: #0d6efd;
+}
+
+.workflow-node.selected {
+    border-color: #0d6efd;
+    border-width: 3px;
+    box-shadow: 0 4px 16px rgba(13,110,253,0.3);
+}
+
+.workflow-node.dragging {
+    opacity: 0.7;
+    cursor: grabbing;
+}
+
+/* Node Header */
+.node-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.node-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    flex-grow: 1;
+}
+
+.node-icon {
+    font-size: 1.2rem;
+    margin-right: 6px;
+}
+
+.node-delete {
+    background: none;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    padding: 0;
+    font-size: 1rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.workflow-node:hover .node-delete {
+    opacity: 1;
+}
+
+.node-delete:hover {
+    color: #a71d2a;
+}
+
+/* Node Body */
+.node-body {
+    font-size: 0.85rem;
+    color: #6c757d;
+    min-height: 20px;
+}
+
+.node-body .badge {
+    font-size: 0.7rem;
+    margin-top: 4px;
+}
+
+/* Node Ports */
+.node-port {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background-color: #6c757d;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    cursor: crosshair;
+    z-index: 20;
+}
+
+.node-port:hover {
+    background-color: #0d6efd;
+    transform: scale(1.3);
+}
+
+.node-port.input {
+    left: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.node-port.output {
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.node-port.input:hover {
+    left: -8px;
+}
+
+.node-port.output:hover {
+    right: -8px;
+}
+
+/* Node Type Colors */
+.workflow-node.type-start,
+.workflow-node.type-event-success {
+    border-color: #198754;
+    background-color: #f0fff4;
+}
+
+.workflow-node.type-stop,
+.workflow-node.type-event-error {
+    border-color: #dc3545;
+    background-color: #fff5f5;
+}
+
+.workflow-node.type-source-database,
+.workflow-node.type-source-table,
+.workflow-node.type-source-columns {
+    border-color: #0d6efd;
+    background-color: #f0f7ff;
+}
+
+.workflow-node.type-transform-json,
+.workflow-node.type-transform-concat,
+.workflow-node.type-transform-sql,
+.workflow-node.type-transform-duckdb,
+.workflow-node.type-transform-filter,
+.workflow-node.type-transform-dedupe {
+    border-color: #ffc107;
+    background-color: #fffbf0;
+}
+
+.workflow-node.type-dest-database,
+.workflow-node.type-dest-table,
+.workflow-node.type-dest-mapper {
+    border-color: #0dcaf0;
+    background-color: #f0fcff;
+}
+
+.workflow-node.type-op-logger,
+.workflow-node.type-op-notifier,
+.workflow-node.type-op-condition,
+.workflow-node.type-op-fork,
+.workflow-node.type-op-join {
+    border-color: #6c757d;
+    background-color: #f8f9fa;
+}
+
+.workflow-node.type-event-change {
+    border-color: #0dcaf0;
+    background-color: #f0fcff;
+}
+
+/* Connection Lines (will be enhanced by jsPlumb) */
+.workflow-connection {
+    stroke: #6c757d;
+    stroke-width: 2;
+    fill: none;
+}
+
+.workflow-connection:hover {
+    stroke: #0d6efd;
+    stroke-width: 3;
+}
+
+.workflow-connection.selected {
+    stroke: #0d6efd;
+    stroke-width: 3;
+}
+
+/* Properties Panel */
+#node-properties {
+    background-color: #ffffff;
+}
+
+.property-group {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.property-group:last-child {
+    border-bottom: none;
+}
+
+.property-label {
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+    color: #495057;
+}
+
+.property-value {
+    font-size: 0.9rem;
+}
+
+/* Workflow Info Panel */
+.workflow-info-panel {
+    background-color: #e7f1ff;
+    border: 1px solid #b6d4fe;
+    border-radius: 4px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Canvas Grid */
+.canvas-grid {
+    background-image: 
+        linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+/* Zoom Controls */
+.zoom-level {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background-color: rgba(255,255,255,0.9);
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    z-index: 100;
+}
+
+/* Node Validation States */
+.workflow-node.invalid {
+    border-color: #dc3545;
+    animation: shake 0.3s;
+}
+
+.workflow-node.valid {
+    border-color: #198754;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+/* Connection Endpoint Styles */
+.jtk-endpoint {
+    z-index: 20;
+}
+
+.jtk-connector {
+    z-index: 5;
+}
+
+.jtk-overlay {
+    z-index: 15;
+}
+
+/* Drag Ghost */
+.node-drag-ghost {
+    position: absolute;
+    opacity: 0.5;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+/* Context Menu (for right-click on nodes) */
+.node-context-menu {
+    position: absolute;
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+    min-width: 150px;
+}
+
+.node-context-menu-item {
+    padding: 8px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.node-context-menu-item:last-child {
+    border-bottom: none;
+}
+
+.node-context-menu-item:hover {
+    background-color: #f8f9fa;
+}
+
+.node-context-menu-item i {
+    margin-right: 8px;
+}
+
+/* Mini-map */
+.workflow-minimap {
+    position: absolute;
+    bottom: 50px;
+    right: 10px;
+    width: 200px;
+    height: 150px;
+    background-color: rgba(255,255,255,0.9);
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    z-index: 100;
+    overflow: hidden;
+}
+
+/* Loading Spinner */
+.workflow-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 200;
+}
+
+/* Workflow Stats */
+.workflow-stats {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+.workflow-stat {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.workflow-stat i {
+    font-size: 1rem;
+}
+
+/* Node Configuration Form */
+.node-config-form .form-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.node-config-form .form-control,
+.node-config-form .form-select {
+    font-size: 0.85rem;
+}
+
+.node-config-form small {
+    font-size: 0.75rem;
+}
+
+/* Selection Box (for multi-select) */
+.selection-box {
+    position: absolute;
+    border: 2px dashed #0d6efd;
+    background-color: rgba(13,110,253,0.1);
+    pointer-events: none;
+    z-index: 50;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .col-md-2 {
+        margin-bottom: 1rem;
+    }
+    
+    #workflow-canvas-container {
+        height: 60vh;
+    }
+    
+    #node-properties {
+        height: auto;
+        max-height: 50vh;
+    }
+}
+

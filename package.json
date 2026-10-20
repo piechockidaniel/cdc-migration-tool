@@ -1,0 +1,21 @@
+{
+    
+"dependencies": {
+    
+    
+"@jsplumb/browser-ui": "^6.2.10",
+    
+    
+"bootstrap": "^5.3.8",
+    
+    
+"bootstrap-icons": "^1.13.1",
+    
+    
+"flowcanvas": "^1.0.0",
+    
+    
+"jsplumb": "^2.15.6"
+    
+}
+}

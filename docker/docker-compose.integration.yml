@@ -1,0 +1,63 @@
+# Integration environment for the connector tests (tests/integration/test_live_*.py).
+#
+#   docker compose -f docker/docker-compose.integration.yml up -d
+#   CDCSYNC_LIVE_TESTS=1 pytest tests/integration -m live
+#
+# Every service is configured the way the prerequisite checks expect
+# (CDC-capable editions, logical WAL, ROW binlog, replica set, ARCHIVELOG).
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "CdcSync!2024"
+      MSSQL_PID: "Developer"          # CDC requires Developer/Enterprise/Standard(2016 SP1+)
+      MSSQL_AGENT_ENABLED: "true"     # capture/cleanup jobs run in SQL Agent
+    ports: ["1433:1433"]
+    volumes: ["./init/mssql.sql:/init/mssql.sql:ro"]
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P 'CdcSync!2024' -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      retries: 20
+
+  postgres:
+    image: postgres:16
+    command: ["postgres", "-c", "wal_level=logical", "-c", "max_replication_slots=8", "-c", "max_wal_senders=8"]
+    environment:
+      POSTGRES_USER: cdc
+      POSTGRES_PASSWORD: cdc
+      POSTGRES_DB: source
+    ports: ["5432:5432"]
+    volumes: ["./init/postgres.sql:/docker-entrypoint-initdb.d/postgres.sql:ro"]
+    # wal2json: use the image `debezium/postgres:16` (ships the plugin) if you want JSON decoding;
+    # the stock image works with plugin=test_decoding.
+
+  mariadb:
+    image: mariadb:11
+    command: ["--log-bin=mysql-bin", "--binlog-format=ROW", "--binlog-row-image=FULL", "--server-id=1",
+              "--binlog-expire-logs-seconds=604800"]
+    environment:
+      MARIADB_ROOT_PASSWORD: cdc
+      MARIADB_DATABASE: source
+      MARIADB_USER: cdc
+      MARIADB_PASSWORD: cdc
+    ports: ["3306:3306"]
+    volumes: ["./init/mariadb.sql:/docker-entrypoint-initdb.d/mariadb.sql:ro"]
+
+  mongo:
+    image: mongo:7
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    ports: ["27017:27017"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "try { rs.status().ok } catch (e) { rs.initiate().ok }"]
+      interval: 5s
+      retries: 20
+
+  oracle:
+    image: gvenzl/oracle-free:23-slim
+    environment:
+      ORACLE_PASSWORD: cdc
+      APP_USER: cdc
+      APP_USER_PASSWORD: cdc
+    ports: ["1521:1521"]
+    volumes: ["./init/oracle.sql:/container-entrypoint-initdb.d/oracle.sql:ro"]

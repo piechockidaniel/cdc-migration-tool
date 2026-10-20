@@ -1,0 +1,257 @@
+/* Custom styles for MSSQL CDC Synchronizer */
+
+:root {
+    --primary-color: #0d6efd;
+    --success-color: #198754;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #0dcaf0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.3rem;
+}
+
+.card {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+    height: 100%;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: bold;
+}
+
+.status-running {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.status-stopped {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.status-paused {
+    background-color: var(--warning-color);
+    color: black;
+}
+
+.connection-status {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+.connection-status.connected {
+    background-color: var(--success-color);
+}
+
+.connection-status.disconnected {
+    background-color: var(--danger-color);
+}
+
+.event-item {
+    border-left: 4px solid #dee2e6;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    background-color: white;
+    border-radius: 4px;
+}
+
+.event-item.insert {
+    border-left-color: var(--success-color);
+}
+
+.event-item.update {
+    border-left-color: var(--info-color);
+}
+
+.event-item.delete {
+    border-left-color: var(--danger-color);
+}
+
+.event-item.failed {
+    background-color: #f8d7da;
+}
+
+.stats-card {
+    text-align: center;
+    padding: 1.5rem;
+}
+
+.stats-card .stats-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.stats-card .stats-label {
+    color: #6c757d;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+}
+
+.tree-view {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.tree-view ul {
+    list-style-type: none;
+    padding-left: 1.5rem;
+}
+
+.tree-view li {
+    padding: 0.25rem 0;
+    cursor: pointer;
+}
+
+.tree-view li:hover {
+    background-color: #f8f9fa;
+}
+
+.tree-view .tree-icon {
+    margin-right: 0.5rem;
+    color: var(--primary-color);
+}
+
+.mapping-row {
+    padding: 0.75rem;
+    background-color: white;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+}
+
+.mapping-arrow {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+    text-align: center;
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.alert-dismissible {
+    position: relative;
+    padding-right: 3rem;
+}
+
+.log-viewer {
+    max-height: 500px;
+    overflow-y: auto;
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    padding: 1rem;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+}
+
+.log-entry {
+    padding: 0.25rem 0;
+    border-bottom: 1px solid #333;
+}
+
+.log-entry:last-child {
+    border-bottom: none;
+}
+
+.log-timestamp {
+    color: #858585;
+}
+
+.log-level {
+    font-weight: bold;
+    margin: 0 0.5rem;
+}
+
+.log-level.info {
+    color: #4ec9b0;
+}
+
+.log-level.error {
+    color: #f48771;
+}
+
+.log-level.warning {
+    color: #ce9178;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .stats-card .stats-number {
+        font-size: 2rem;
+    }
+    
+    .mapping-arrow {
+        font-size: 1.2rem;
+    }
+}
+
+/* Animation for new events */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.event-item.new {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* Custom scrollbar */
+.log-viewer::-webkit-scrollbar {
+    width: 8px;
+}
+
+.log-viewer::-webkit-scrollbar-track {
+    background: #2d2d2d;
+}
+
+.log-viewer::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 4px;
+}
+
+.log-viewer::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}
+
+
+
+
+

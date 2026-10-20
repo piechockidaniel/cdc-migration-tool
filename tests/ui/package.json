@@ -1,0 +1,15 @@
+{
+  "name": "cdcsync-ui-tests",
+  "private": true,
+  "type": "module",
+  "description": "Headless browser tests for the SPA (puppeteer-core + a chromium build shipped through npm, no CDN download needed)",
+  "scripts": {
+    "smoke": "node smoke.mjs",
+    "e2e": "node e2e.mjs",
+    "tour": "node tour.mjs"
+  },
+  "devDependencies": {
+    "@sparticuz/chromium": "^131.0.0",
+    "puppeteer-core": "^23.0.0"
+  }
+}

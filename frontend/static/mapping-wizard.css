@@ -1,0 +1,184 @@
+/* ============================================================================
+   MAPPING WIZARD STYLES
+   ============================================================================ */
+
+/* Loading Overlay */
+.wizard-loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.wizard-loading-overlay.show {
+    opacity: 1;
+}
+
+.wizard-loading-content {
+    background: white;
+    border-radius: 12px;
+    padding: 2.5rem 3rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    min-width: 300px;
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+
+.wizard-loading-overlay.show .wizard-loading-content {
+    transform: scale(1);
+}
+
+.wizard-loading-message {
+    font-size: 1.1rem;
+    color: #333;
+    font-weight: 500;
+}
+
+/* Alert Container */
+.wizard-alert-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10001;
+    width: 90%;
+    max-width: 500px;
+    pointer-events: none;
+}
+
+/* Alert Cards */
+.wizard-alert {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    margin-bottom: 1rem;
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: auto;
+}
+
+.wizard-alert.show {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.wizard-alert-content {
+    display: flex;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    gap: 1rem;
+}
+
+.wizard-alert-icon {
+    font-size: 1.75rem;
+    flex-shrink: 0;
+}
+
+.wizard-alert-message {
+    flex: 1;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #333;
+}
+
+.wizard-alert-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: #666;
+    cursor: pointer;
+    padding: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background-color 0.2s, color 0.2s;
+    flex-shrink: 0;
+}
+
+.wizard-alert-close:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    color: #333;
+}
+
+/* Alert Type Colors */
+.wizard-alert-success {
+    border-left: 4px solid #198754;
+}
+
+.wizard-alert-success .wizard-alert-icon {
+    color: #198754;
+}
+
+.wizard-alert-danger {
+    border-left: 4px solid #dc3545;
+}
+
+.wizard-alert-danger .wizard-alert-icon {
+    color: #dc3545;
+}
+
+.wizard-alert-warning {
+    border-left: 4px solid #ffc107;
+}
+
+.wizard-alert-warning .wizard-alert-icon {
+    color: #ffc107;
+}
+
+.wizard-alert-info {
+    border-left: 4px solid #0dcaf0;
+}
+
+.wizard-alert-info .wizard-alert-icon {
+    color: #0dcaf0;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+    .wizard-alert-container {
+        width: 95%;
+        max-width: none;
+    }
+
+    .wizard-alert-content {
+        padding: 1rem;
+        gap: 0.75rem;
+    }
+
+    .wizard-alert-icon {
+        font-size: 1.5rem;
+    }
+
+    .wizard-alert-message {
+        font-size: 0.9rem;
+    }
+
+    .wizard-loading-content {
+        padding: 2rem;
+        min-width: 250px;
+    }
+
+    .wizard-loading-message {
+        font-size: 1rem;
+    }
+}
+
+/* Animation for multiple alerts stacking */
+.wizard-alert:nth-child(n+4) {
+    display: none;
+}

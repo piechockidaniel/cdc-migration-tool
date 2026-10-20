@@ -1,0 +1,106 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+!frontend/static/bootstrap/dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.cursor/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Configuration & Data
+config/*.json
+!config/.gitkeep
+history/*.json
+!history/.gitkeep
+*.log
+*.db
+*.sqlite
+
+# Environment variables
+.env
+.env.local
+.env.*
+!.env.example
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+.tox/
+# OS
+Thumbs.db
+.ai
+/node_modules/**
+/nul
+# runtime state (2.0)
+config/state.sqlite3*
+config/store/
+config/*.migrated-*
+history/audit.sqlite3*
+history/*.jsonl
+workflows/
+app.log
+
+# Vendored frontend packages: retain runtime assets and package/license metadata.
+/frontend/static/bootstrap/**
+!/frontend/static/bootstrap/LICENSE
+!/frontend/static/bootstrap/package.json
+!/frontend/static/bootstrap/dist/
+!/frontend/static/bootstrap/dist/css/
+!/frontend/static/bootstrap/dist/css/bootstrap.min.css
+!/frontend/static/bootstrap/dist/js/
+!/frontend/static/bootstrap/dist/js/bootstrap.bundle.min.js
+
+/frontend/static/bootstrap-icons/**
+!/frontend/static/bootstrap-icons/LICENSE
+!/frontend/static/bootstrap-icons/package.json
+!/frontend/static/bootstrap-icons/font/
+!/frontend/static/bootstrap-icons/font/bootstrap-icons.css
+!/frontend/static/bootstrap-icons/font/fonts/
+!/frontend/static/bootstrap-icons/font/fonts/bootstrap-icons.woff
+!/frontend/static/bootstrap-icons/font/fonts/bootstrap-icons.woff2
+
+/frontend/static/jsplumb/**
+!/frontend/static/jsplumb/browser-ui/
+!/frontend/static/jsplumb/browser-ui/js/
+!/frontend/static/jsplumb/browser-ui/js/jsplumb.browser-ui.umd.js
+!/frontend/static/jsplumb/browser-ui/LICENSE*
+!/frontend/static/jsplumb/browser-ui/package.json

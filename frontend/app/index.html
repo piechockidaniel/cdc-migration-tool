@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CDC Synchronizer</title>
+    <link rel="icon" href="/static/favicon.ico">
+    <link href="/static/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/app/css/app.css" rel="stylesheet">
+</head>
+<body>
+<div id="app" v-cloak>
+    <!-- sidebar -->
+    <aside class="sidebar" :class="{ collapsed: ui.sidebarCollapsed }">
+        <div class="brand" @click="go('/dashboard')">
+            <i class="bi bi-arrow-left-right"></i>
+            <span class="label">CDC Synchronizer</span>
+        </div>
+        <nav data-tour="nav" data-tour-fit>
+            <a v-for="item in nav" :key="item.path" :href="'#' + item.path" class="nav-item" :class="{ active: route.path.startsWith(item.path) }" :title="item.label">
+                <i :class="'bi ' + item.icon"></i>
+                <span class="label">{{ item.label }}</span>
+                <span v-if="item.badge && item.badge()" class="badge rounded-pill" :class="item.badgeClass || 'bg-danger'">{{ item.badge() }}</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <a class="nav-item" href="/docs" target="_blank" title="API docs"><i class="bi bi-book"></i><span class="label">API docs</span></a>
+            <a class="nav-item" href="/legacy/" target="_blank" title="Legacy UI (workflow designer)"><i class="bi bi-box-arrow-up-right"></i><span class="label">Legacy UI</span></a>
+            <a class="nav-item" href="#" @click.prevent="ui.sidebarCollapsed = !ui.sidebarCollapsed" title="Collapse">
+                <i class="bi" :class="ui.sidebarCollapsed ? 'bi-chevron-double-right' : 'bi-chevron-double-left'"></i><span class="label">Collapse</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- main -->
+    <div class="main" :class="{ collapsed: ui.sidebarCollapsed }">
+        <header class="topbar">
+            <div class="d-flex align-items-center gap-3">
+                <h1 class="page-title mb-0">{{ currentTitle }}</h1>
+                <span v-if="store.loading" class="spinner-border spinner-border-sm text-secondary"></span>
+            </div>
+            <div class="d-flex align-items-center gap-2" data-tour="topbar-status">
+                <span class="status-pill" :class="store.ws.connected ? 'ok' : 'off'" :title="store.ws.connected ? 'live events connected' : 'live events disconnected'">
+                    <i class="bi bi-broadcast"></i> {{ store.ws.connected ? 'live' : 'offline' }}
+                </span>
+                <span class="status-pill" :class="store.health.status === 'healthy' ? 'ok' : 'warn'">
+                    <i class="bi bi-heart-pulse"></i> {{ store.health.status || '…' }}
+                </span>
+                <a href="#/alerts" class="status-pill" :class="store.alerts.active.length ? 'danger' : 'ok'">
+                    <i class="bi bi-bell"></i> {{ store.alerts.active.length }} alerts
+                </a>
+                <button class="btn btn-sm btn-outline-secondary" @click="store.refreshAll()" title="Refresh"><i class="bi bi-arrow-clockwise"></i></button>
+                <button class="btn btn-sm btn-outline-secondary" @click="toggleTheme()" title="Toggle theme"><i class="bi" :class="ui.theme === 'dark' ? 'bi-sun' : 'bi-moon'"></i></button>
+                <div class="help-menu" data-tour="help-menu">
+                    <button class="btn btn-sm btn-outline-secondary" @click="help.menuOpen = !help.menuOpen" title="Help" aria-label="Help"><i class="bi bi-question-circle"></i></button>
+                    <div v-if="help.menuOpen" class="dropdown-menu shadow" @mouseleave="help.menuOpen = false">
+                        <button class="dropdown-item" @click="help.startTour(0)"><i class="bi bi-signpost-2 me-2"></i>Take the guided tour</button>
+                        <button class="dropdown-item" @click="help.resetHints(); help.menuOpen = false"><i class="bi bi-lightbulb me-2"></i>Show page hints again <span v-if="help.hintsDismissed" class="badge bg-secondary ms-1">{{ help.hintsDismissed }} hidden</span></button>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="/app-docs/user-guide/02-ui.md" target="_blank"><i class="bi bi-book me-2"></i>User guide</a>
+                        <a class="dropdown-item" href="/docs" target="_blank"><i class="bi bi-braces me-2"></i>API reference</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="content">
+            <component :is="currentPage" :key="route.path + JSON.stringify(route.params)" :params="route.params" :query="route.query"></component>
+        </main>
+    </div>
+
+    <!-- toasts -->
+    <div class="toast-stack">
+        <transition-group name="toast">
+            <div v-for="t in store.toasts" :key="t.id" class="toast-item" :class="'toast-' + t.type" @click="store.dismissToast(t.id)">
+                <i class="bi" :class="{ 'bi-check-circle': t.type === 'success', 'bi-x-octagon': t.type === 'error', 'bi-exclamation-triangle': t.type === 'warning', 'bi-info-circle': t.type === 'info' }"></i>
+                <div class="toast-body-text">{{ t.message }}</div>
+            </div>
+        </transition-group>
+    </div>
+
+    <!-- guided tour -->
+    <tour-overlay></tour-overlay>
+
+    <!-- confirm dialog -->
+    <modal-dialog v-if="store.confirm.open" :title="store.confirm.title" size="sm" @close="store.resolveConfirm(false)">
+        <p class="mb-0" style="white-space: pre-line">{{ store.confirm.message }}</p>
+        <template #footer>
+            <button class="btn btn-secondary" @click="store.resolveConfirm(false)">Cancel</button>
+            <button class="btn" :class="store.confirm.danger ? 'btn-danger' : 'btn-primary'" @click="store.resolveConfirm(true)">{{ store.confirm.okLabel }}</button>
+        </template>
+    </modal-dialog>
+</div>
+
+<script src="/app/vendor/vue.global.prod.js"></script>
+<script src="/app/vendor/chart.umd.js"></script>
+<script type="module" src="/app/js/main.js"></script>
+</body>
+</html>
